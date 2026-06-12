@@ -17,6 +17,7 @@ if st.session_state["estado"] == "esperando_dni":
             dni = int(dni_input)
             empleado = df[df["dni"] == dni]
             if not empleado.empty:
+                st.session_state["dni"] = dni
                 st.session_state["saldo"] = empleado.iloc[0]["saldo_vacaciones"]
                 st.session_state["nombre"] = empleado.iloc[0]["nombre"]
                 st.session_state["estado"] = "esperando_dias"
@@ -25,3 +26,27 @@ if st.session_state["estado"] == "esperando_dni":
                 )
             else:
                 st.error("Legajo no encontrado. Verifique el DNI ingresado.")
+
+if st.session_state["estado"] == "esperando_dias":
+    dias_solicitados = st.number_input(
+        "Ingrese la cantidad de días a solicitar:", min_value=0, step=1
+    )
+    if st.button("Solicitar Vacaciones"):
+        if dias_solicitados <= 0:
+            st.error("La cantidad de días debe ser mayor a 0.")
+        else:
+            if dias_solicitados <= st.session_state["saldo"]:
+                nuevo_saldo = st.session_state["saldo"] - dias_solicitados
+                df.loc[df["dni"] == st.session_state["dni"], "saldo_vacaciones"] = (
+                    nuevo_saldo
+                )
+                df.to_csv("data/empleados.csv", index=False)
+                st.session_state["saldo"] = nuevo_saldo
+                st.session_state["estado"] = "finalizado"
+                st.success(
+                    f"Solicitud aprobada. Se descontaron {dias_solicitados} días. Nuevo saldo: {nuevo_saldo} días."
+                )
+            else:
+                st.error(
+                    "Saldo insuficiente. No puede solicitar más días de los disponibles."
+                )
