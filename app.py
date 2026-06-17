@@ -15,15 +15,16 @@ if st.session_state["estado"] == "esperando_dni":
             st.error("El DNI ingresado no es válido. Debe contener solo números.")
         else:
             dni = int(dni_input)
-            empleado = df[df["dni"] == dni]
+            empleado = df[df["dni_empleado"] == dni]
             if not empleado.empty:
-                st.session_state["dni"] = dni
-                st.session_state["saldo"] = empleado.iloc[0]["saldo_vacaciones"]
-                st.session_state["nombre"] = empleado.iloc[0]["nombre"]
+                st.session_state["dni_empleado"] = dni
+                st.session_state["saldo"] = int(empleado.iloc[0]["saldo_vacaciones"])
+                st.session_state["nombre"] = empleado.iloc[0]["nombre_empleado"]
                 st.session_state["estado"] = "esperando_dias"
                 st.success(
                     f"Bienvenido/a {st.session_state['nombre']}. Su saldo de vacaciones es de {st.session_state['saldo']} días."
                 )
+                st.rerun()
             else:
                 st.error("Legajo no encontrado. Verifique el DNI ingresado.")
 
@@ -37,9 +38,10 @@ if st.session_state["estado"] == "esperando_dias":
         else:
             if dias_solicitados <= st.session_state["saldo"]:
                 nuevo_saldo = st.session_state["saldo"] - dias_solicitados
-                df.loc[df["dni"] == st.session_state["dni"], "saldo_vacaciones"] = (
-                    nuevo_saldo
-                )
+                df.loc[
+                    df["dni_empleado"] == st.session_state["dni_empleado"],
+                    "saldo_vacaciones",
+                ] = nuevo_saldo
                 df.to_csv("data/empleados.csv", index=False)
                 st.session_state["saldo"] = nuevo_saldo
                 st.session_state["estado"] = "finalizado"
